@@ -64,26 +64,34 @@ if __name__ == "__main__":
     ranks, combs = zip(*args.param_comb_to_saver_mapping.items())
     args.param_comb_to_saver_mapping_reverse = dict(zip(combs, ranks))
 
+    logger.info("Reading Training Files")
     args.feature_files = args.training_knowns_files
     training_data = readHDF5.prep_all_features_parallel(args)
     training_data = dict([(_, training_data[_]['features']) for _ in training_data])
 
-    event = mp.Event()
+    logger.info("Starting Training Processes")
     trainer_processes = mp.spawn(common_operations.call_specific_approach,
-                                 args=(args, training_data, event),
+                                 args=(args, training_data),
                                  nprocs=args.world_size,
                                  join=False)
-    processes = []
+
+    logger.info("Starting Model Saver Processes")
+    saver_processes = []
     for rank in range(args.world_size,args.world_size+len(args.param_comb_to_saver_mapping)):
         p = mp.Process(target=common_operations.saver_process_initialization,
                        args=(rank, args, len(training_data), args.param_comb_to_saver_mapping, None))
         p.start()
-        processes.append(p)
+        saver_processes.append(p)
 
-    for p in processes: p.join()
+    logger.info("All processes started ... waiting for their completion")
+
+    for p in saver_processes: p.join()
     trainer_processes.join()
+    logger.info("Training Ended")
+
     # Use for testing
     # Load the test feature files
+    logger.info("Reading Testing Files")
     all_testing_data=[]
     for testing_file in args.testing_files:
         args.feature_files = [testing_file]
@@ -94,17 +102,18 @@ if __name__ == "__main__":
     if args.OOD_Algo not in ['EVM','Turbo_EVM']: training_data=None
     # Load the model
     for grid_serach_param_combination in args.param_comb_to_saver_mapping.values():
+        logger.info(f"Running Testing for combination {grid_serach_param_combination}")
         OOD_model_dict =  opensetAlgos.save_load_operations.model_loader(args,
                                                                          grid_serach_param_combination,
                                                                          training_data)
         for testing_file, testing_data in all_testing_data:
+            logger.info(f"Running Testing for file {testing_file}")
             output_file_name = args.output_dir/pathlib.Path(f"{grid_serach_param_combination}/"
                                                             f"{testing_file.split('/')[-2]}")
             output_file_name.mkdir(parents=True, exist_ok=True)
             output_file_name = output_file_name/pathlib.Path(f"{testing_file.split('/')[-1]}")
-            event.clear()
             testing_processes = mp.spawn(common_operations.call_specific_approach,
-                                         args=(args, testing_data, event, OOD_model_dict),
+                                         args=(args, testing_data, OOD_model_dict),
                                          nprocs=args.world_size,
                                          join=False)
             saver_process = mp.Process(target=common_operations.saver_process_initialization,

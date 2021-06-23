@@ -45,8 +45,7 @@ def saver_process_initialization(rank, args, total_no_of_classes = None, savers_
                      rank=rank,
                      world_size = world_size,
                      backend=rpc.BackendType.TENSORPIPE,
-                     rpc_backend_options=rpc.TensorPipeRpcBackendOptions(#num_send_recv_threads=args.world_size*3,
-                                                                         rpc_timeout=0,
+                     rpc_backend_options=rpc.TensorPipeRpcBackendOptions(rpc_timeout=0,
                                                                          init_method='env://')
                      )
         logger = vastlogger.get_logger(level=args.verbose, output=args.output_dir,
@@ -71,7 +70,7 @@ def saver_process_initialization(rank, args, total_no_of_classes = None, savers_
     return
 
 def call_distance_based_approaches(gpu, args, features_all_classes, logger, models,
-                                   new_classes_to_add = None, event=None):
+                                   new_classes_to_add = None):
     if new_classes_to_add is None:
         class_names = list(features_all_classes.keys())
         exemplar_classes = []
@@ -117,7 +116,7 @@ def call_distance_based_approaches(gpu, args, features_all_classes, logger, mode
     rpc.shutdown()
     return
 
-def call_specific_approach(rank, args, features_all_classes, event=None,
+def call_specific_approach(rank, args, features_all_classes,
                            models=None, new_classes_to_add = None):
     if args.world_size>1:
         if models is None:
@@ -130,8 +129,8 @@ def call_specific_approach(rank, args, features_all_classes, event=None,
                      rank=rank,
                      world_size=world_size,
                      backend=rpc.BackendType.TENSORPIPE,
-                     rpc_backend_options=rpc.TensorPipeRpcBackendOptions(#num_send_recv_threads=args.world_size*3,
-                                                                         rpc_timeout=0)
+                     rpc_backend_options=rpc.TensorPipeRpcBackendOptions(rpc_timeout=0,
+                                                                         init_method='env://')
                      )
         torch.cuda.set_device(rank)
         os.environ["CUDA_VISIBLE_DEVICES"] = f"{rank}"
@@ -141,4 +140,4 @@ def call_specific_approach(rank, args, features_all_classes, event=None,
     else:
         logger = vastlogger.get_logger()
     return call_distance_based_approaches(rank, args, features_all_classes, logger,
-                                          models, new_classes_to_add, event)
+                                          models, new_classes_to_add)
