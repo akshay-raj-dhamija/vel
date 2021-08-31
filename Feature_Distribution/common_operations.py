@@ -45,8 +45,7 @@ def saver_process_initialization(rank, args, total_no_of_classes = None, savers_
                      rank=rank,
                      world_size = world_size,
                      backend=rpc.BackendType.TENSORPIPE,
-                     rpc_backend_options=rpc.TensorPipeRpcBackendOptions(_transports=["uv"],
-                                                                         rpc_timeout=0,
+                     rpc_backend_options=rpc.TensorPipeRpcBackendOptions(rpc_timeout=0,
                                                                          init_method='env://')
                      )
         logger = vastlogger.get_logger(level=args.verbose, output=args.output_dir,
@@ -130,8 +129,7 @@ def call_specific_approach(rank, args, features_all_classes,
                      rank=rank,
                      world_size=world_size,
                      backend=rpc.BackendType.TENSORPIPE,
-                     rpc_backend_options=rpc.TensorPipeRpcBackendOptions(_transports=["uv"],
-                                                                         rpc_timeout=0,
+                     rpc_backend_options=rpc.TensorPipeRpcBackendOptions(rpc_timeout=0,
                                                                          init_method='env://')
                      )
         torch.cuda.set_device(rank)
