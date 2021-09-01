@@ -17,6 +17,9 @@ def command_line_options():
     parser.add_argument('-v', '--verbose', help="To decrease verbosity increase", action='count', default=0)
     parser.add_argument("--debug", action="store_true", default=False, help="debugging flag")
     parser.add_argument("--run_only_test", action="store_true", default=False, help="run_only_test")
+    parser.add_argument("--do_not_filter_corrects", action="store_true", default=False,
+                        help="By default we consider only correct samples for training, "
+                             "if you need to consider all samples use this flag.")
     parser.add_argument("--no_multiprocessing", action="store_true", default=False,
                         help="Use for debugging or running on single GPU")
     parser.add_argument('--port_no', default='9451', type=str,
@@ -71,6 +74,24 @@ if __name__ == "__main__":
     training_data = dict([(_, training_data[_]['features']) for _ in training_data])
 
     if not args.run_only_test:
+
+        if not args.do_not_filter_corrects:
+            logger.info("Filtering samples")
+            if args.layer_names[0]!='fc':
+                logger.info("Reading files ")
+                original_layer_to_extract = args.layer_names
+                args.layer_names = ['fc']
+                args.feature_files = [_.replace(args.layer_names[0], 'fc') for _ in args.training_knowns_files]
+                classifier_data = readHDF5.prep_all_features_parallel(args)
+                classifier_data = dict([(_, classifier_data[_]['features']) for _ in classifier_data])
+            else:
+                classifier_data = training_data
+            for cls_no, cls_name in enumerate(sorted(classifier_data.keys())):
+                filter_result = f"{classifier_data[cls_name].shape} "
+                training_data[cls_name]=training_data[cls_name][torch.max(classifier_data[cls_name], dim=1).indices == cls_no,:]
+                filter_result+=f"{training_data[cls_name].shape}"
+                logger.debug(f"{cls_no}, {cls_name}, {filter_result}")
+
         logger.info("Starting Training Processes")
         trainer_processes = mp.spawn(common_operations.call_specific_approach,
                                      args=(args, training_data),
