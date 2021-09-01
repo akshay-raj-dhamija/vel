@@ -80,10 +80,11 @@ if __name__ == "__main__":
             if args.layer_names[0]!='fc':
                 logger.info("Reading files ")
                 original_layer_to_extract = args.layer_names
-                args.layer_names = ['fc']
                 args.feature_files = [_.replace(args.layer_names[0], 'fc') for _ in args.training_knowns_files]
+                args.layer_names = ['fc']
                 classifier_data = readHDF5.prep_all_features_parallel(args)
                 classifier_data = dict([(_, classifier_data[_]['features']) for _ in classifier_data])
+                args.layer_names = original_layer_to_extract
             else:
                 classifier_data = training_data
             for cls_no, cls_name in enumerate(sorted(classifier_data.keys())):
@@ -146,3 +147,4 @@ if __name__ == "__main__":
             saver_process.start()
             saver_process.join()
             testing_processes.join()
+
