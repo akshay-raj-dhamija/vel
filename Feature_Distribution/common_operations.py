@@ -94,10 +94,10 @@ def call_distance_based_approaches(gpu, args, features_all_classes, logger, mode
         algorithm_results_iterator = OOD_Method(pos_classes_to_process, features_all_classes, args, gpu, models)
         for current_class_output in algorithm_results_iterator:
             param_comb, (cls_name, model) = current_class_output
-            model['weibulls'] = model['weibulls'].return_all_parameters()
-            if 'extreme_vectors' in model:
-                del model['extreme_vectors']
-
+            if model is not None:
+                model['weibulls'] = model['weibulls'].return_all_parameters()
+                if 'extreme_vectors' in model:
+                    del model['extreme_vectors']
             _ = rpc.remote(f"{args.param_comb_to_saver_mapping_reverse[param_comb]}",
                            saver_process_execution,
                            timeout=0,
