@@ -59,10 +59,14 @@ if __name__ == "__main__":
     if args.debug:
         args.verbose = 0
 
-    # all_string_comb = [algo_params['param_id_string'].format(*k).replace('.','*') for k in
-    #                    itertools.product(*[args.__dict__[a] for a in algo_params['param_names']])]
-    all_string_comb = [algo_params['param_id_string'].format(*k) for k in
-                       itertools.product(*[args.__dict__[a] for a in algo_params['param_names']])]
+    comb = []
+    for a in algo_params['param_names']:
+        if type(args.__dict__[a]) == list:
+            comb.append(args.__dict__[a])
+        else:
+            comb.append([args.__dict__[a]])
+    all_string_comb = [algo_params['param_id_string'].format(*k) for k in itertools.product(*comb)]
+
     args.param_comb_to_saver_mapping = dict(zip(range(args.world_size, len(all_string_comb) + args.world_size),
                                                 all_string_comb))
     ranks, combs = zip(*args.param_comb_to_saver_mapping.items())
@@ -130,6 +134,9 @@ if __name__ == "__main__":
         OOD_model_dict =  opensetAlgos.save_load_operations.model_loader(args,
                                                                          grid_serach_param_combination,
                                                                          training_data)
+        if len(OOD_model_dict.keys())==0:
+            logger.critical("Model not trained properly ... Skipping")
+            continue
         for testing_file, testing_data in all_testing_data:
             logger.info(f"Running Testing for file {testing_file}")
             output_file_name = args.output_dir/pathlib.Path(f"{grid_serach_param_combination}/"
