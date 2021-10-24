@@ -20,8 +20,6 @@ def command_line_options():
     parser.add_argument("--do_not_filter_corrects", action="store_true", default=False,
                         help="By default we consider only correct samples for training, "
                              "if you need to consider all samples use this flag.")
-    parser.add_argument("--no_multiprocessing", action="store_true", default=False,
-                        help="Use for debugging or running on single GPU")
     parser.add_argument('--port_no', default='9451', type=str,
                         help='port number for multiprocessing\ndefault: %(default)s')
     parser.add_argument("--output_dir", type=str, default='/scratch/adhamija/results/', help="Results directory")
@@ -41,8 +39,8 @@ def command_line_options():
     # Adding Algorithm Params
     params_parser = argparse.ArgumentParser(parents = [parser],formatter_class = argparse.RawTextHelpFormatter,
                                             usage=argparse.SUPPRESS,
-                                            description = "This script runs experiments for incremental learning " 
-                                                          "i.e. Table 1 and 2 from the Paper")
+                                            description = "This script runs experiments for "
+                                                          "feature distribution experiments")
     parser, algo_params = getattr(opensetAlgos, known_args.OOD_Algo + '_Params')(params_parser)
     args = parser.parse_args()
     return args, algo_params
@@ -54,8 +52,6 @@ if __name__ == "__main__":
     logger = vastlogger.setup_logger(level=args.verbose, output=args.output_dir)
 
     args.world_size = torch.cuda.device_count()
-    if args.world_size==1:
-        args.no_multiprocessing = True
     if args.debug:
         args.verbose = 0
 

@@ -16,10 +16,12 @@ class save_inference_results:
         self.total_no_of_classes = total_no_of_classes
         self.processed_classes = 0
         self.hf = h5py.File(output_file_name, "w")
+        self.output_file_name = output_file_name
 
     def __call__(self, cls_name, data):
         layer_name, values = data
-        g = self.hf.create_group(cls_name)
+        print(f"{self.output_file_name} cls_name {cls_name} layer_name {layer_name}")
+        g = self.hf.create_group(str(cls_name))
         g.create_dataset(layer_name, data=values)
         self.processed_classes+=1
 
@@ -59,6 +61,8 @@ def saver_process_initialization(rank, args, total_no_of_classes = None, savers_
     else:
         logger.debug(f"Calling inference file saver")
         saver_class = save_inference_results
+        logger.debug(f"Saving to file {output_file_name}")
+
     model_saver_obj = saver_class(args,
                                   (savers_mapping[rank], rank), #args.param_comb_to_saver_mapping
                                   total_no_of_classes,
@@ -66,7 +70,7 @@ def saver_process_initialization(rank, args, total_no_of_classes = None, savers_
     model_saver_obj.wait()
     model_saver_obj.close()
     logger.info(f"Shutting down RPC saver process for combination {savers_mapping[rank]}")
-    rpc.shutdown()
+    if args.world_size>1: rpc.shutdown()
     return
 
 def call_distance_based_approaches(gpu, args, features_all_classes, logger, models,
