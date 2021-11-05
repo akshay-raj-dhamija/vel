@@ -9,6 +9,8 @@ import common_operations
 from vast import opensetAlgos
 from vast.tools import logger as vastlogger
 from vast.data_prep import readHDF5
+from vast.tools.features_dict_to_dim_dict import features_to_dim
+import pdb
 
 def command_line_options():
     parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter,
@@ -33,7 +35,9 @@ def command_line_options():
     parser.add_argument("--testing_files", nargs="+", help="HDF5 file path for known images",
                         default=["/net/reddwarf/bigscratch/adhamija/Features/MOCOv2/imagenet_1000_val.hdf5"])
     parser.add_argument("--layer_names", nargs="+", help="The layers to extract from each file", default=["avgpool"])
-
+    
+    parser.add_argument("--PDW", action="store_true", default=False, help="Per Dimension Weibulls")
+    
     known_args, unknown_args = parser.parse_known_args()
 
     # Adding Algorithm Params
@@ -72,6 +76,8 @@ if __name__ == "__main__":
     args.feature_files = args.training_knowns_files
     training_data = readHDF5.prep_all_features_parallel(args)
     training_data = dict([(_, training_data[_]['features']) for _ in training_data])
+    if args.PDW:
+        training_data = features_to_dim(training_data)
 
     if not args.run_only_test:
 
@@ -121,6 +127,8 @@ if __name__ == "__main__":
         args.feature_files = [testing_file]
         testing_data = readHDF5.prep_all_features_parallel(args)
         testing_data = dict([(_, testing_data[_]['features']) for _ in testing_data])
+        if args.PDW:
+            testing_data = features_to_dim(testing_data)
         all_testing_data.append([testing_file, testing_data])
 
     if args.OOD_Algo not in ['EVM','Turbo_EVM']: training_data=None
