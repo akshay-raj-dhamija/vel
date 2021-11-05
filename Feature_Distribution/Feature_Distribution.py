@@ -7,6 +7,7 @@ torch.multiprocessing.set_sharing_strategy('file_system')
 import torch.multiprocessing as mp
 import common_operations
 from vast import opensetAlgos
+from vast.opensetAlgos import heuristic
 from vast.tools import logger as vastlogger
 from vast.data_prep import readHDF5
 from vast.tools.features_dict_to_dim_dict import features_to_dim
@@ -138,6 +139,10 @@ if __name__ == "__main__":
         OOD_model_dict =  opensetAlgos.save_load_operations.model_loader(args,
                                                                          grid_serach_param_combination,
                                                                          training_data)
+        if args.PDW:
+            OOD_model_dict = heuristic.set_shape_scale_defaults(OOD_model_dict,
+                                                                set_shape_to=1.0,
+                                                                set_scale_to=0.1)
         if len(OOD_model_dict.keys())==0:
             logger.critical("Model not trained properly ... Skipping")
             continue
