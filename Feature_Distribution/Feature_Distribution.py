@@ -26,9 +26,8 @@ def command_line_options():
     parser.add_argument('--port_no', default='9451', type=str,
                         help='port number for multiprocessing\ndefault: %(default)s')
     parser.add_argument("--output_dir", type=str, default='/scratch/adhamija/results/', help="Results directory")
-    parser.add_argument('--OOD_Algo', default='EVM', type=str, choices=['OpenMax','EVM','Turbo_EVM','MultiModalOpenMax'],
+    parser.add_argument('--OOD_Algo', default='EVM', type=str, choices=['OpenMax','EVM','Turbo_EVM','MultiModalOpenMax', 'PDW'],
                         help='Name of the openset detection algorithm')
-
     parser.add_argument("--training_knowns_files", nargs="+", help="HDF5 file path for known images",
                         default=["/net/reddwarf/bigscratch/adhamija/Features/MOCOv2/imagenet_1000_val.hdf5"])
     parser.add_argument("--training_unknowns_files", nargs="+", help="HDF5 file path for unknown images",
@@ -36,8 +35,6 @@ def command_line_options():
     parser.add_argument("--testing_files", nargs="+", help="HDF5 file path for known images",
                         default=["/net/reddwarf/bigscratch/adhamija/Features/MOCOv2/imagenet_1000_val.hdf5"])
     parser.add_argument("--layer_names", nargs="+", help="The layers to extract from each file", default=["avgpool"])
-    
-    parser.add_argument("--PDW", action="store_true", default=False, help="Per Dimension Weibulls")
     
     known_args, unknown_args = parser.parse_known_args()
 
@@ -77,8 +74,6 @@ if __name__ == "__main__":
     args.feature_files = args.training_knowns_files
     training_data = readHDF5.prep_all_features_parallel(args)
     training_data = dict([(_, training_data[_]['features']) for _ in training_data])
-    if args.PDW:
-        training_data = features_to_dim(training_data)
 
     if not args.run_only_test:
 
@@ -128,8 +123,6 @@ if __name__ == "__main__":
         args.feature_files = [testing_file]
         testing_data = readHDF5.prep_all_features_parallel(args)
         testing_data = dict([(_, testing_data[_]['features']) for _ in testing_data])
-        if args.PDW:
-            testing_data = features_to_dim(testing_data)
         all_testing_data.append([testing_file, testing_data])
 
     if args.OOD_Algo not in ['EVM','Turbo_EVM']: training_data=None
@@ -139,10 +132,7 @@ if __name__ == "__main__":
         OOD_model_dict =  opensetAlgos.save_load_operations.model_loader(args,
                                                                          grid_serach_param_combination,
                                                                          training_data)
-        if args.PDW:
-            OOD_model_dict = heuristic.set_shape_scale_defaults(OOD_model_dict,
-                                                                set_shape_to=1.0,
-                                                                set_scale_to=0.1)
+
         if len(OOD_model_dict.keys())==0:
             logger.critical("Model not trained properly ... Skipping")
             continue
