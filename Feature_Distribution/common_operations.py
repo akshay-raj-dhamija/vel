@@ -40,7 +40,7 @@ def saver_process_execution(cls_name, data):
 def saver_process_initialization(rank, args, total_no_of_classes = None, savers_mapping = None, output_file_name=None):
     global model_saver_obj
     world_size = args.world_size + len(savers_mapping)
-    if args.world_size>1:
+    if args.world_size>=1:
         os.environ['MASTER_ADDR'] = 'localhost'
         os.environ['MASTER_PORT'] = args.port_no
         rpc.init_rpc(f"{rank}",
@@ -70,7 +70,7 @@ def saver_process_initialization(rank, args, total_no_of_classes = None, savers_
     model_saver_obj.wait()
     model_saver_obj.close()
     logger.info(f"Shutting down RPC saver process for combination {savers_mapping[rank]}")
-    if args.world_size>1: rpc.shutdown()
+    if args.world_size>=1: rpc.shutdown()
     return
 
 def call_distance_based_approaches(gpu, args, features_all_classes, logger, models,
@@ -122,7 +122,7 @@ def call_distance_based_approaches(gpu, args, features_all_classes, logger, mode
 
 def call_specific_approach(rank, args, features_all_classes,
                            models=None, new_classes_to_add = None):
-    if args.world_size>1:
+    if args.world_size>=1:
         if models is None:
             world_size = args.world_size + len(args.param_comb_to_saver_mapping)
         else:
