@@ -66,6 +66,9 @@ def get_gt_prob(file_name, perform_softmax=False, topk=1, layer_name="avgpool"):
         logger.critical("Performing Softmax normalization")
         softmax_op = torch.nn.Softmax(dim=1)
         all_logits = softmax_op(all_logits)
+    # The following is a special case for background class, it is hardcoded for 320 known classes
+    if all_logits.shape[1]==321:
+        all_logits = all_logits[:,:-1]
     all_predicted = torch.arange(all_logits.shape[1])
     all_predicted = all_predicted.repeat((all_logits.shape[0],1))
     if topk is not None:
