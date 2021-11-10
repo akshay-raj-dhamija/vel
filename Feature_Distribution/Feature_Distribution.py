@@ -7,8 +7,11 @@ torch.multiprocessing.set_sharing_strategy('file_system')
 import torch.multiprocessing as mp
 import common_operations
 from vast import opensetAlgos
+from vast.opensetAlgos import heuristic
 from vast.tools import logger as vastlogger
 from vast.data_prep import readHDF5
+from vast.tools.features_dict_to_dim_dict import features_to_dim
+import pdb
 
 def command_line_options():
     parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter,
@@ -23,9 +26,8 @@ def command_line_options():
     parser.add_argument('--port_no', default='9451', type=str,
                         help='port number for multiprocessing\ndefault: %(default)s')
     parser.add_argument("--output_dir", type=str, default='/scratch/adhamija/results/', help="Results directory")
-    parser.add_argument('--OOD_Algo', default='EVM', type=str, choices=['OpenMax','EVM','Turbo_EVM','MultiModalOpenMax'],
+    parser.add_argument('--OOD_Algo', default='EVM', type=str, choices=['OpenMax','EVM','Turbo_EVM','MultiModalOpenMax', 'PDW'],
                         help='Name of the openset detection algorithm')
-
     parser.add_argument("--training_knowns_files", nargs="+", help="HDF5 file path for known images",
                         default=["/net/reddwarf/bigscratch/adhamija/Features/MOCOv2/imagenet_1000_val.hdf5"])
     parser.add_argument("--training_unknowns_files", nargs="+", help="HDF5 file path for unknown images",
@@ -33,7 +35,7 @@ def command_line_options():
     parser.add_argument("--testing_files", nargs="+", help="HDF5 file path for known images",
                         default=["/net/reddwarf/bigscratch/adhamija/Features/MOCOv2/imagenet_1000_val.hdf5"])
     parser.add_argument("--layer_names", nargs="+", help="The layers to extract from each file", default=["avgpool"])
-
+    
     known_args, unknown_args = parser.parse_known_args()
 
     # Adding Algorithm Params
@@ -130,6 +132,7 @@ if __name__ == "__main__":
         OOD_model_dict =  opensetAlgos.save_load_operations.model_loader(args,
                                                                          grid_serach_param_combination,
                                                                          training_data)
+
         if len(OOD_model_dict.keys())==0:
             logger.critical("Model not trained properly ... Skipping")
             continue
