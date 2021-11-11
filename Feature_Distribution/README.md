@@ -1,5 +1,10 @@
 ### Experiments for Feature Distribution Techniques
 
+## ODIN
+```
+python ODIN.py --arch resnet50 --output_dir /tmp/adhamija/ODIN --temperature 1 2 5 10 --images-path /scratch/datasets/ImageNet/ILSVRC_2012/val_in_folders/
+```
+
 Prerequsite --> Pre-extracted features
 
 ## OpenMax
