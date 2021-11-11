@@ -20,7 +20,6 @@ class save_inference_results:
 
     def __call__(self, cls_name, data):
         layer_name, values = data
-        print(f"{self.output_file_name} cls_name {cls_name} layer_name {layer_name}")
         g = self.hf.create_group(str(cls_name))
         g.create_dataset(layer_name, data=values)
         self.processed_classes+=1
